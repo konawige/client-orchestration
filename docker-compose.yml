@@ -1,0 +1,117 @@
+
+services:
+  migrate:
+    image: django_connect:latest
+    # image: ghcr.io/konawige/django_connect:1.0.0
+    container_name: django_migrate
+    env_file:
+      - .backend.env
+    command: python manage.py migrate --settings=config.settings.${DJANGO_ENV}
+    depends_on:
+      - postgres
+    restart: "no"
+    networks:
+      - client-network
+
+  web-backend:
+    image: django_connect:latest
+    # image: ghcr.io/konawige/django_connect:1.0.0
+    container_name: django_web
+    env_file:
+      - .backend.env
+    command: >
+      sh -c "
+      if [ \"$$DJANGO_ENV\" = \"base\" ]; then
+        python manage.py runserver 0.0.0.0:8000 --settings=config.settings.$$DJANGO_ENV;
+      else
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --settings config.settings.$$DJANGO_ENV;
+      fi
+      "
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+    networks:
+      - client-network
+
+  huey:
+    image: django_connect:latest
+    # image: ghcr.io/konawige/django_connect:1.0.
+    container_name: django_huey
+    env_file:
+      - .backend.env
+    command: python manage.py run_huey --settings=config.settings.${DJANGO_ENV}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_started
+    networks:
+      - client-network
+
+  web-frontend:
+    image: client-woo-connect:latest
+    # image: ghcr.io/konawige/client-woo-connect:1.0.0
+    container_name: client_portal
+    env_file:
+      - .frontend.env
+    ports:
+      - "4200:80"
+    depends_on:
+      - web-backend
+    networks:
+      - client-network
+
+  warehouse-connect:
+    image: woo-warehouse-be:latest
+    # image: ghcr.io/konawige/woo-warehouse-be:1.0.0
+    container_name: warehouse_connect
+    env_file:
+      - .warehouse.env
+    ports:
+      - "8001:8000"
+    depends_on:
+      - web-backend
+    restart: unless-stopped
+    networks:
+      - client-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: django_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - django_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - client-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: django_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - client-network
+
+volumes:
+  django_postgres_data:
+    name: django_postgres_data_local
+
+networks:
+  client-network:
+    driver: bridge

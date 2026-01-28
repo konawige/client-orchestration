@@ -1,0 +1,56 @@
+name: Deploy to Hetzner
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to Hetzner
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            cd ~/repos/client-orchestration
+
+            git config core.sshCommand "ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes"
+
+            git remote set-url origin git@github.com:konawige/client-orchestration.git
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Pull latest images from registry
+            docker compose -f docker-compose-prod.yml pull
+
+            # nothing to build, only images
+            # docker compose -f docker-compose-prod.yml build
+
+            # Recreate containers with new images
+            docker compose -f docker-compose-prod.yml up -d --force-recreate
+            
+            # Show status
+            docker compose -f docker-compose-prod.yml ps
+            
+            # Cleanup
+            docker image prune -af
+            
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ubuntu
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script: |
+            sleep 10
+            curl -f http://localhost:8000/health || echo "Warning: Django Connect health check failed"
+            curl -f http://localhost:8001/health || echo "Warning: FastAPI health check failed"
+            curl -f http://localhost:4200/ || echo "Warning: Client UI portal health check failed"
+            echo "✅ Deployment complete!"
