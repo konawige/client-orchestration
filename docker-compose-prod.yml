@@ -19,6 +19,8 @@ services:
   web-backend:
     <<: *django-image
     container_name: django_web
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.${DJANGO_ENV}
     env_file:
       - .backend.env
     command: >
@@ -26,7 +28,7 @@ services:
       if [ \"$$DJANGO_ENV\" = \"base\" ]; then
         python manage.py runserver 0.0.0.0:8000 --settings=config.settings.$$DJANGO_ENV;
       else
-        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --settings config.settings.$$DJANGO_ENV;
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000;
       fi
       "
     ports:
