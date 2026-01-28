@@ -53,7 +53,27 @@ jobs:
           password: ${{ secrets.HETZNER_PASSWORD }}
           script: |
             sleep 10
-            curl -f http://localhost:8000/health || echo "Warning: Django Connect health check failed"
-            curl -f http://localhost:8001/health || echo "Warning: FastAPI health check failed"
-            curl -f http://localhost:4200/ || echo "Warning: Client UI portal health check failed"
-            echo "✅ Deployment complete!"
+            echo "Running health checks..."
+            
+            # Django Connect health check
+            if ! curl -f http://localhost:8000/health; then
+              echo "❌ ERROR: Django Connect health check failed"
+              exit 1
+            fi
+            echo "✅ Django Connect is healthy"
+            
+            # FastAPI health check
+            if ! curl -f http://localhost:8001/health; then
+              echo "❌ ERROR: FastAPI health check failed"
+              exit 1
+            fi
+            echo "✅ FastAPI is healthy"
+            
+            # Client UI portal health check
+            if ! curl -f http://localhost:4200/; then
+              echo "❌ ERROR: Client UI portal health check failed"
+              exit 1
+            fi
+            echo "✅ Client UI portal is healthy"
+            
+            echo "✅ All health checks passed! Deployment complete!"
