@@ -17,6 +17,7 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ubuntu
           key: ${{ secrets.HETZNER_SSH_KEY }}
+          password: ${{ secrets.HETZNER_PASSWORD }}
           script: |
             cd ~/repos/client-orchestration
 
