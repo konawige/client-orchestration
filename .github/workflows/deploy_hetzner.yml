@@ -50,6 +50,7 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ubuntu
           key: ${{ secrets.HETZNER_SSH_KEY }}
+          password: ${{ secrets.HETZNER_PASSWORD }}
           script: |
             sleep 10
             curl -f http://localhost:8000/health || echo "Warning: Django Connect health check failed"
