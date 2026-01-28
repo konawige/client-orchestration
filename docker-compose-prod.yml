@@ -1,7 +1,7 @@
 
 x-django-image: &django-image
   # image: django_connect:latest
-  image: ghcr.io/konawige/django_connect:1.0.5
+  image: ghcr.io/konawige/django_connect:1.0.6
 
 services:
   migrate:
