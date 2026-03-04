@@ -70,6 +70,22 @@ services:
     networks:
       - client-network
 
+  bi-linker-landing:
+    # image: bi-linker-landing:latest
+    image: ghcr.io/konawige/bi-linker-landing:1.0.0
+    container_name: bi-linker-landing
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - client-network
+
   warehouse-connect:
     # image: woo-warehouse-be:latest
     image: ghcr.io/konawige/woo-warehouse-be:1.0.0
