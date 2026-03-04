@@ -9,15 +9,21 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+    permissions:
+      packages: read
+
     steps:
       - name: Deploy to Hetzner
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
         with:
           host: ${{ secrets.HETZNER_HOST }}
           username: ubuntu
           key: ${{ secrets.HETZNER_SSH_KEY }}
           password: ${{ secrets.HETZNER_PASSWORD }}
+          envs: GHCR_TOKEN,GHCR_USERNAME
           script: |
             mkdir -p ~/repos
             cd ~/repos
@@ -28,7 +34,10 @@ jobs:
             cd client-orchestration
             git config core.sshCommand "ssh -i ~/.ssh/github_deploy -o IdentitiesOnly=yes"
             git pull origin main
-            
+
+            # Authenticate to ghcr.io
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
             # Pull latest images from registry
             docker compose -f docker-compose-prod.yml pull
 
@@ -37,12 +46,15 @@ jobs:
 
             # Recreate containers with new images
             docker compose -f docker-compose-prod.yml up -d --force-recreate
-            
+
             # Show status
             docker compose -f docker-compose-prod.yml ps
-            
+
             # Cleanup
             docker image prune -af
+
+            # Revoke credentials from server
+            docker logout ghcr.io
             
       - name: Verify Deployment
         uses: appleboy/ssh-action@v1.0.0
