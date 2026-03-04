@@ -75,7 +75,7 @@ jobs:
             echo "✅ Django Connect is healthy"
             
             # FastAPI health check
-            if ! curl -f http://localhost:8001/health; then
+            if ! curl -f http://localhost:8001/; then
               echo "❌ ERROR: FastAPI health check failed"
               exit 1
             fi
