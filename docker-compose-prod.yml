@@ -75,7 +75,7 @@ services:
     image: ghcr.io/konawige/bi-linker-landing:1.0.0
     container_name: bi-linker-landing
     ports:
-      - "3000:80"
+      - "4000:80"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
