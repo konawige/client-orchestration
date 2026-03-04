@@ -74,6 +74,8 @@ services:
     # image: bi-linker-landing:latest
     image: ghcr.io/konawige/bi-linker-landing:1.0.0
     container_name: bi-linker-landing
+    env_file:
+      - .bi-linker.env
     ports:
       - "4000:80"
     restart: unless-stopped
