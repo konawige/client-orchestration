@@ -16,7 +16,7 @@ jobs:
       - name: Deploy to Hetzner
         uses: appleboy/ssh-action@v1.2.0
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GHCR_USERNAME: ${{ github.actor }}
         with:
           host: ${{ secrets.HETZNER_HOST }}
