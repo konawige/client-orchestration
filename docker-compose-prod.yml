@@ -72,7 +72,7 @@ services:
 
   bi-linker-landing:
     # image: bi-linker-landing:latest
-    image: ghcr.io/konawige/bi-linker-landing:1.0.1
+    image: ghcr.io/konawige/bi-linker-landing:1.0.2
     container_name: bi-linker-landing
     env_file:
       - .bi-linker.env
