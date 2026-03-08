@@ -59,7 +59,7 @@ services:
 
   web-frontend:
     # image: client-woo-connect:latest
-    image: ghcr.io/konawige/client-woo-connect:1.0.2
+    image: ghcr.io/konawige/client-woo-connect:1.0.3
     container_name: client_portal
     env_file:
       - .frontend.env
