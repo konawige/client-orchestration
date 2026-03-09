@@ -13,6 +13,17 @@ services:
     networks:
       - client-network
 
+  collectstatic:
+    image: django_connect:latest
+    # image: ghcr.io/konawige/django_connect:1.0.0
+    container_name: django_collectstatic
+    env_file:
+      - .backend.env
+    command: python manage.py collectstatic --noinput --settings=config.settings.${DJANGO_ENV}
+    restart: "no"
+    networks:
+      - client-network
+
   web-backend:
     image: django_connect:latest
     # image: ghcr.io/konawige/django_connect:1.0.0
@@ -32,6 +43,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      collectstatic:
+        condition: service_completed_successfully
       postgres:
         condition: service_started
     networks:
@@ -46,6 +59,8 @@ services:
     command: python manage.py run_huey --settings=config.settings.${DJANGO_ENV}
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      collectstatic:
         condition: service_completed_successfully
       redis:
         condition: service_started

@@ -1,7 +1,7 @@
 
 x-django-image: &django-image
   # image: django_connect:latest
-  image: ghcr.io/konawige/django_connect:1.0.11
+  image: ghcr.io/konawige/django_connect:1.0.12
 
 services:
   migrate:
@@ -12,6 +12,16 @@ services:
     command: python manage.py migrate --settings=config.settings.${DJANGO_ENV}
     depends_on:
       - postgres
+    restart: "no"
+    networks:
+      - client-network
+
+  collectstatic:
+    <<: *django-image
+    container_name: django_collectstatic
+    env_file:
+      - .backend.env
+    command: python manage.py collectstatic --noinput --settings=config.settings.${DJANGO_ENV}
     restart: "no"
     networks:
       - client-network
@@ -36,6 +46,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      collectstatic:
+        condition: service_completed_successfully
       postgres:
         condition: service_started
     networks:
@@ -49,6 +61,8 @@ services:
     command: python manage.py run_huey --settings=config.settings.${DJANGO_ENV}
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      collectstatic:
         condition: service_completed_successfully
       redis:
         condition: service_started
