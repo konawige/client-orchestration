@@ -1,7 +1,7 @@
 
 x-django-image: &django-image
   # image: django_connect:latest
-  image: ghcr.io/konawige/django_connect:1.0.12
+  image: ghcr.io/konawige/django_connect:1.0.13
 
 services:
   migrate:
@@ -11,7 +11,13 @@ services:
       - .backend.env
     command: python manage.py migrate --settings=config.settings.${DJANGO_ENV}
     depends_on:
-      - postgres
+      # Must be service_healthy, not a plain dependency: the deploy runs
+      # --force-recreate, so postgres is recreated alongside this container and a plain
+      # dependency only waits for it to *start*, not to accept connections. With
+      # restart: "no" a lost race isn't retried, and because web-backend waits on
+      # migrate's service_completed_successfully, the whole deploy stalls silently.
+      postgres:
+        condition: service_healthy
     restart: "no"
     networks:
       - client-network
@@ -70,10 +76,15 @@ services:
         condition: service_started
     networks:
       - client-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   web-frontend:
     # image: client-woo-connect:latest
-    image: ghcr.io/konawige/client-woo-connect:1.0.6
+    image: ghcr.io/konawige/client-woo-connect:1.0.7
     container_name: client_portal
     env_file:
       - .frontend.env
@@ -104,7 +115,7 @@ services:
 
   warehouse-connect:
     # image: woo-warehouse-be:latest
-    image: ghcr.io/konawige/woo-warehouse-be:1.0.0
+    image: ghcr.io/konawige/woo-warehouse-be:1.0.2
     container_name: warehouse_connect
     env_file:
       - .warehouse.env
@@ -130,16 +141,17 @@ services:
       retries: 5
     volumes:
       - django_postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
+    # ports:
+    #   - "5433:5432"
     networks:
       - client-network
 
   redis:
     image: redis:7-alpine
     container_name: django_redis
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    # ports:
+    #   - "6379:6379"
     networks:
       - client-network
 
